@@ -23,9 +23,15 @@
 ;;;
 ;;;    final-clause ::= finally compound-form+
 
-(defclass final-clause
-    (clause variable-clause-mixin main-clause-mixin)
+(defclass final-clause (clause)
   ((%form :initarg :form :reader form)))
+
+;;; The final clause does not bind any variables.
+(defmethod bound-variables ((clause final-clause))
+  '())
+
+(defmethod accumulation-variables ((clause final-clause))
+  '())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -40,3 +46,10 @@
 	       'compound+))
 
 (add-clause-parser 'final-clause-parser)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute epilogue.
+
+(defmethod epilogue ((clause final-clause))
+  (form clause))

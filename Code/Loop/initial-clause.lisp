@@ -23,9 +23,15 @@
 ;;;
 ;;;    initial-clause ::= initially compound-form+
 
-(defclass initial-clause
-    (clause variable-clause-mixin main-clause-mixin)
+(defclass initial-clause (clause)
   ((%form :initarg :form :reader form)))
+
+;;; The initial clause does not bind any variables.
+(defmethod bound-variables ((clause initial-clause))
+  '())
+
+(defmethod accumulation-variables ((clause initial-clause))
+  '())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -40,3 +46,11 @@
 	       'compound+))
 
 (add-clause-parser 'initial-clause-parser)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute prologue-form.
+
+(defmethod prologue-form ((clause initial-clause) end-tag)
+  (declare (ignore end-tag))
+  (form clause))

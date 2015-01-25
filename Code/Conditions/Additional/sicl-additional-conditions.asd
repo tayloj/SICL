@@ -1,7 +1,8 @@
-(in-package #:common-lisp-user)
+(in-package #:asdf-user)
 
-(asdf:defsystem #:sicl-additional-conditions
-  :depends-on (#:sicl-internationalization #:sicl-additional-types)
+(defsystem #:sicl-additional-conditions
+  :depends-on (:cleavir-internationalization
+	       :sicl-additional-types)
   :components
   ((:file "packages")
    (:file "conditions" :depends-on ("packages"))

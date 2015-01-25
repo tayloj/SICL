@@ -27,7 +27,7 @@
 ;;; single with-clause by destructuring the value of the corresponding
 ;;; form.
 ;;;
-;;; When there are several consecutive with-claues, the execution is
+;;; When there are several consecutive with-clause, the execution is
 ;;; done sequentially, so that variables created in one with-clause
 ;;; can be used in the forms of subsequent with-clauses.  If parallel
 ;;; creation of variables is wanted, then the with-clause can be
@@ -48,14 +48,46 @@
 ;;; Class WITH-CLAUSE.
 ;;;
 
-(defclass with-clause (clause subclauses-mixin variable-clause-mixin) ())
+(defclass with-clause (variable-clause subclauses-mixin) ())
 
 (defclass with-subclause ()
   ((%var-spec :initarg :var-spec :reader var-spec)
-   (%type-spec :initarg :type-spec :reader type-spec)))
+   (%type-spec :initarg :type-spec :reader type-spec)
+   ;; This slot contains a copy of the tree contained in the VAR-SPEC
+   ;; slot except that the non-NIL leaves have been replaced by
+   ;; GENSYMs.
+   (%temp-vars :initarg :temp-vars :reader temp-vars)
+   ;; This slot contains a list of pairs.  Each pair is a CONS cell
+   ;; where the CAR is a variable in VAR-SPEC and the CDR is the
+   ;; corresponding variable in TEMP-VARS.
+   (%dictionary :initarg :dictionary :reader dictionary)))
+
+(defmethod initialize-instance :after
+    ((clause with-subclause) &key &allow-other-keys)
+  (multiple-value-bind (temp-vars dictionary)
+      (fresh-variables (var-spec clause))
+    (reinitialize-instance clause
+			   :temp-vars temp-vars
+			   :dictionary dictionary)))
+
+(defclass with-subclause-no-form (with-subclause) ())
 
 (defclass with-subclause-with-form (with-subclause)
-  ((%form :initarg :form :reader form)))
+  ((%form :initarg :form :reader form)
+   (%form-var :initform (gensym) :reader form-var)))
+
+;;; The default form is NIL.
+(defmethod form ((subclause with-subclause))
+  nil)
+
+(defmethod bound-variables ((clause with-clause))
+  (reduce #'append
+	  (mapcar #'bound-variables (subclauses clause))
+	  :from-end t))
+
+(defmethod bound-variables ((subclause with-subclause))
+  (mapcar #'car
+	  (extract-variables (var-spec subclause) nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -71,19 +103,19 @@
 		   :type-spec type-spec
 		   :form form))
 	       ;; Accept anything for now.  Analyze later. 
-	       (singleton #'identity (constantly t))
+	       'anything-parser
 	       'optional-type-spec-parser
 	       (keyword-parser '=)
-	       (singleton #'identity (constantly t))))
+	       'anything-parser))
 
 ;;; Parser for var [type-spec]
 (define-parser with-subclause-type-2-parser
   (consecutive (lambda (var-spec type-spec)
-		 (make-instance 'with-subclause
+		 (make-instance 'with-subclause-no-form
 		   :var-spec var-spec
 		   :type-spec type-spec))
 	       ;; Accept anything for now.  Analyze later. 
-	       (singleton #'identity (constantly t))
+	       'anything-parser
 	       'optional-type-spec-parser))
 
 ;;; Parser for any type of with subclause without the leading keyword
@@ -111,3 +143,42 @@
 			'with-subclause-and-parser)))
 
 (add-clause-parser 'with-clause-parser)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute the bindings.
+
+(defmethod initial-bindings ((clause with-clause))
+  (reduce #'append (mapcar #'initial-bindings (subclauses clause))))
+
+(defmethod initial-bindings ((clause with-subclause-with-form))
+  `((,(form-var clause) ,(form clause))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute the subclause wrapper.
+
+(defmethod wrap-subclause ((subclause with-subclause-with-form) inner-form)
+  `(let* ,(destructure-variables (var-spec subclause) (form-var subclause))
+     ,inner-form))
+
+(defmethod wrap-subclause ((subclause with-subclause-no-form) inner-form)
+  (let* ((vars-and-types
+	   (extract-variables (var-spec subclause) (type-spec subclause)))
+	 (vars-and-values
+	   (loop for (var type) in vars-and-types
+		 collect (list var
+			       (case type
+				 (fixnum 0)
+				 (float 0.0)
+				 (t nil))))))
+    `(let ,vars-and-values
+       ,inner-form)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute the declarations.
+
+(defmethod declarations ((clause with-subclause))
+  (reduce #'append (mapcar #'declarations (subclauses clause))
+	  :from-end t))

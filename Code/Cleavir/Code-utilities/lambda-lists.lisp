@@ -80,7 +80,7 @@
 ;;; its min and max arity, where NIL means unbounded.
 (defparameter *lambda-list-keywords*
   `((&whole 1 1)
-    (&environment 1 1)
+    (&environment 1 nil)
     (&optional 0 nil)
     (&rest 1 1)
     (&body 1 1)
@@ -375,12 +375,12 @@
 ;;;   * var
 ;;;   * (var)
 ;;;   * (var init-form)
-;;;   * (var init-from supplied-p-parameter)
+;;;   * (var init-form supplied-p-parameter)
 ;;;
 ;;; we boil it down to 2:
 ;;;
 ;;;   * (var init-form)
-;;;   * (var init-from supplied-p-parameter)
+;;;   * (var init-form supplied-p-parameter)
 ;;;
 ;;; by replacing var or (var) by (var nil)
 (defun parse-ordinary-optional (optional)
@@ -441,12 +441,12 @@
 ;;;   * var
 ;;;   * (pattern)
 ;;;   * (pattern init-form)
-;;;   * (pattern init-from supplied-p-parameter)
+;;;   * (pattern init-form supplied-p-parameter)
 ;;;
 ;;; we boil it down to 2:
 ;;;
 ;;;   * (pattern init-form)
-;;;   * (pattern init-from supplied-p-parameter)
+;;;   * (pattern init-form supplied-p-parameter)
 ;;;
 ;;; by replacing var by (var <default>) and (pattern) by (pattern nil).
 (defun parse-destructuring/deftype-optional (optional default)
@@ -497,7 +497,7 @@
 ;;;   * var
 ;;;   * (var)
 ;;;   * (var init-form)
-;;;   * (var init-from supplied-p-parameter)
+;;;   * (var init-form supplied-p-parameter)
 ;;;   * ((keyword var))
 ;;;   * ((keyword var) init-form)
 ;;;   * ((keyword var) init-form supplied-p-parameter)
@@ -586,7 +586,7 @@
 ;;;   * var
 ;;;   * (var)
 ;;;   * (var init-form)
-;;;   * (var init-from supplied-p-parameter)
+;;;   * (var init-form supplied-p-parameter)
 ;;;   * ((keyword pattern))
 ;;;   * ((keyword pattern) init-form)
 ;;;   * ((keyword pattern) init-form supplied-p-parameter)
@@ -860,7 +860,7 @@
 		  (progn
 		    (setf (values (whole result) positions)
 			  (parse-whole lambda-list positions))
-		    (if (eq (cadddr lambda-list) '&environment)
+		    (if (eq (caddr lambda-list) '&environment)
 			(progn
 			  (setf (values (environment result) positions)
 				(parse-environment lambda-list positions))
@@ -917,7 +917,7 @@
 		  (progn
 		    (setf (values (whole result) positions)
 			  (parse-whole lambda-list positions))
-		    (if (eq (cadddr lambda-list) '&environment)
+		    (if (eq (caddr lambda-list) '&environment)
 			(progn
 			  (setf (values (environment result) positions)
 				(parse-environment lambda-list positions))
@@ -1074,7 +1074,7 @@
 		  (progn
 		    (setf (values (whole result) positions)
 			  (parse-whole lambda-list positions))
-		    (if (eq (cadddr lambda-list) '&environment)
+		    (if (eq (caddr lambda-list) '&environment)
 			(progn
 			  (setf (values (environment result) positions)
 				(parse-environment lambda-list positions))
@@ -1131,7 +1131,7 @@
 		  (progn
 		    (setf (values (whole result) positions)
 			  (parse-whole lambda-list positions))
-		    (if (eq (cadddr lambda-list) '&environment)
+		    (if (eq (caddr lambda-list) '&environment)
 			(progn
 			  (setf (values (environment result) positions)
 				(parse-environment lambda-list positions))
@@ -1448,3 +1448,28 @@
 		   `(&key)))))
     (values unparsed-lambda-list
 	    parsed-lambda-list)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Given an ordinary lambda list, create an argument type specifier
+;;; that is correctly describes calls to functions with such a lambda
+;;; list.
+
+(defun lambda-list-type-specifier (lambda-list)
+  (let ((parsed-lambda-list (parse-ordinary-lambda-list lambda-list))
+	(result '()))
+    (loop repeat (length (required parsed-lambda-list))
+	  do (push t result))
+    (unless (eq (optionals parsed-lambda-list) :none)
+      (push '&optional result)
+      (loop repeat (length (optionals parsed-lambda-list))
+	    do (push t result)))
+    (unless (eq (keys parsed-lambda-list) :none)
+      (push '&key result)
+      (loop for key in (keys parsed-lambda-list)
+	    do (push (list (first (first key)) t) result))
+      (when (allow-other-keys parsed-lambda-list)
+	(push '&allow-other-keys result)))
+    (reverse result)))
+    
+

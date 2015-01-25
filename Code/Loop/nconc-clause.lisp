@@ -12,20 +12,18 @@
 
 (cl:in-package #:sicl-loop)
 
-(defclass nconc-it-clause
-    (accumulate-it-clause list-accumulation-mixin)
+(defclass nconc-clause (list-accumulation-clause) ())
+
+(defclass nconc-it-clause (nconc-clause it-mixin)
   ())
 
-(defclass nconc-form-clause
-    (accumulate-form-clause list-accumulation-mixin)
+(defclass nconc-form-clause (nconc-clause form-mixin)
   ())
 
-(defclass nconc-it-into-clause
-    (accumulate-it-into-clause list-accumulation-mixin)
+(defclass nconc-it-into-clause (into-mixin nconc-clause it-mixin)
   ())
 
-(defclass nconc-form-into-clause
-    (accumulate-form-into-clause list-accumulation-mixin)
+(defclass nconc-form-into-clause (into-mixin nconc-clause form-mixin)
   ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -61,7 +59,7 @@
 		   :into-var var))
 	       (alternative (keyword-parser 'nconc)
 			    (keyword-parser 'nconcing))
-	       (singleton #'identity (constantly t))
+	       'anything-parser
 	       (keyword-parser 'into)
 	       (singleton #'identity
 			  (lambda (x)
@@ -74,10 +72,64 @@
 		   :form form))
 	       (alternative (keyword-parser 'nconc)
 			    (keyword-parser 'nconcing))
-	       (singleton #'identity (constantly t))))
+	       'anything-parser))
 
 (define-parser nconc-clause-parser
   (alternative 'nconc-it-into-clause-parser
 	       'nconc-it-clause-parser
 	       'nconc-form-into-clause-parser
 	       'nconc-form-clause-parser))
+
+(add-clause-parser 'nconc-clause-parser)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute body-form.
+
+(defmethod body-form ((clause nconc-form-clause) end-tag)
+  (declare (ignore end-tag))
+  `(if (null ,*list-tail-accumulation-variable*)
+       (progn (setq ,*accumulation-variable*
+		    ,(form clause))
+	      (setq ,*list-tail-accumulation-variable*
+		    (last ,*accumulation-variable*)))
+       (progn (rplacd ,*list-tail-accumulation-variable*
+		      ,(form clause))
+	      (setq ,*list-tail-accumulation-variable*
+		    (last ,*list-tail-accumulation-variable*)))))
+
+(defmethod body-form ((clause nconc-form-into-clause) end-tag)
+  (declare (ignore end-tag))
+  `(if (null ,(tail-variable (into-var clause)))
+       (progn (setq ,(into-var clause)
+		    ,(form clause))
+	      (setq ,(tail-variable (into-var clause))
+		    (last ,(into-var clause))))
+       (progn (rplacd ,(tail-variable (into-var clause))
+		      ,(form clause))
+	      (setq ,(tail-variable (into-var clause))
+		    (last ,(tail-variable (into-var clause)))))))
+
+(defmethod body-form ((clause nconc-it-clause) end-tag)
+  (declare (ignore end-tag))
+  `(if (null ,*list-tail-accumulation-variable*)
+       (progn (setq ,*accumulation-variable*
+		    ,*it-var*)
+	      (setq ,*list-tail-accumulation-variable*
+		    (last ,*accumulation-variable*)))
+       (progn (rplacd ,*list-tail-accumulation-variable*
+		      ,*it-var*)
+	      (setq ,*list-tail-accumulation-variable*
+		    (last ,*list-tail-accumulation-variable*)))))
+
+(defmethod body-form ((clause nconc-it-into-clause) end-tag)
+  (declare (ignore end-tag))
+  `(if (null ,(tail-variable (into-var clause)))
+       (progn (setq ,(into-var clause)
+		    ,*it-var*)
+	      (setq ,(tail-variable (into-var clause))
+		    (last ,(into-var clause))))
+       (progn (rplacd ,(tail-variable (into-var clause))
+		      ,*it-var*)
+	      (setq ,(tail-variable (into-var clause))
+		    (last ,(tail-variable (into-var clause)))))))

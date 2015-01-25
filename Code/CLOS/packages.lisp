@@ -4,7 +4,7 @@
 
 (defpackage #:sicl-clos
   (:use #:common-lisp)
-  (:import-from #:sicl-code-utilities
+  (:import-from #:cleavir-code-utilities
 		#:proper-list-p
 		#:parse-generic-function-lambda-list
 		#:parse-ordinary-lambda-list
@@ -72,9 +72,10 @@
    #:no-applicable-method #:no-next-method #:remove-method #:defmethod
    #:method-combination #:define-method-combination #:method-combination-error
    #:make-instance
-   #:ensure-generic-function
+   #:ensure-generic-function #:ensure-generic-function-using-class
    #:slot-value #:slot-missing #:slot-boundp #:slot-makunbound
    #:print-object #:describe-object #:documentation
+   #:make-method-lambda
    ;; SICL-specific classes
    #:real-class #:regular-class
    ;; SICL-specific functions

@@ -31,10 +31,7 @@
 ;;; a var-spec and a type-spec
 (defclass var-and-type-spec-mixin ()
   ((%var-spec :initarg :var-spec :accessor var-spec)
-   (%type-spec :initarg :type-spec :accessor type-spec)
-   (%bindings :initform nil :accessor bindings)
-   (%types :initform nil :accessor types)
-   (%ignorables :initform nil :accessor ignorables)))
+   (%type-spec :initarg :type-spec :accessor type-spec)))
 
 ;;; Mixin for clauses that take a list of compound forms
 (defclass compound-forms-mixin ()
@@ -42,59 +39,19 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Mixin for variable clauses
-;;;
-;;; The HyperSpec defines varible-clause like this:
-;;;
-;;;    variable-clause::= with-clause | initial-final | for-as-clause 
-;;; 
-;;; and we follow this example.  The reason the HyperSpec defines
-;;; variable-clause is because the loop body is a name-clause followed
-;;; by zero or more variable-clauses followed by zero or more
-;;; main-clauses, and initial-final is one possibility both for
-;;; variable-clause and main-clause.  This means that an
-;;; initially-clause or a finally-clause can appear anywhere after a
-;;; name-clause.
+;;; Mixin for clauses that make the loop return a value.
 
-(defclass variable-clause-mixin () ())
+(defclass loop-return-clause-mixin () ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Mixin for main clauses 
+;;; Mixin for clauses that has an implicit IT argument.
+
+(defclass it-mixin () ())
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; The HyperSpec defines main-clause like this:
-;;;
-;;;    main-clause::= unconditional | accumulation | conditional |
-;;;                   termination-test | initial-final              
-;;; 
-;;; The reason the HyperSpec defines main-clause is because the loop
-;;; body is a name-clause followed by zero or more variable-clauses
-;;; followed by zero or more main-clauses, and initial-final is one
-;;; possibility both for variable-clause and main-clause.  This means
-;;; that an initially-clause or a finally-clause can appear anywhere
-;;; after a name-clause.
+;;; Mixin for clauses that has an explicit form argument.
 
-(defclass main-clause-mixin () ())
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
-;;; Accumulation clauses
-
-(defclass accumulation-clause (clause main-clause-mixin)
-  ())
-
-(defclass accumulate-it-clause (accumulation-clause)
-  ())
-
-(defclass accumulate-form-clause (accumulation-clause)
-  ((%form :initform nil :initarg :form :accessor form)))
-
-(defclass accumulate-it-into-clause (accumulate-it-clause)
-  ((%into-var :initform nil :initarg :into-var :accessor into-var)))
-
-(defclass accumulate-form-into-clause (accumulate-form-clause)
-  ((%into-var :initform nil :initarg :into-var :accessor into-var)))
-
-(defclass list-accumulation-mixin () ())
-
-(defclass numeric-accumulation-mixin () ())
+(defclass form-mixin ()
+  ((%form :initarg :form :reader form)))

@@ -23,9 +23,11 @@
 ;;;
 ;;;    do-clause ::= do compound-form+
 
-(defclass do-clause
-    (clause variable-clause-mixin main-clause-mixin)
-  ((%form :initarg :form :reader form)))
+(defclass do-clause (unconditional-clause)
+  ((%body :initarg :body :reader body)))
+
+(defmethod accumulation-variables ((clause do-clause))
+  '())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -35,9 +37,17 @@
   (consecutive (lambda (do compound+)
 		 (declare (ignore do))
 		 (make-instance 'do-clause
-		   :form compound+))
+		   :body compound+))
 	       (alternative (keyword-parser 'do)
 			    (keyword-parser 'doing))
 	       'compound+))
 
 (add-clause-parser 'do-clause-parser)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute the body-form.
+
+(defmethod body-form ((clause do-clause) end-tag)
+  (declare (ignore end-tag))
+  (body clause))

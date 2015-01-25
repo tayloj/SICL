@@ -2,6 +2,7 @@
 
 (defpackage #:cleavir-ast
   (:use #:common-lisp)
+  (:shadow #:symbol)
   (:export
    #:ast #:children
    #:boolean-ast-mixin
@@ -9,27 +10,31 @@
    #:one-value-ast-mixin
    #:side-effect-free-ast-mixin
    #:side-effect-free-p
-   #:immediate-ast #:make-immediate-ast
    #:constant-ast #:make-constant-ast #:value
    #:lexical-ast #:make-lexical-ast
-   #:symbol-value-ast #:make-symbol-value-ast #:symbol-ast
-   #:set-symbol-value-ast #:make-set-symbol-value-ast #:symbol-ast
-   #:fdefinition-ast #:make-fdefinition-ast #:name-ast
+   #:symbol-value-ast #:make-symbol-value-ast
+   #:set-symbol-value-ast #:make-set-symbol-value-ast #:symbol
+   #:fdefinition-ast #:make-fdefinition-ast #:info
    #:call-ast #:make-call-ast #:callee-ast #:argument-asts
    #:block-ast #:make-block-ast #:body
    #:function-ast #:make-function-ast #:lambda-list
    #:required-only-p #:required #:argparse-ast #:body-ast
    #:go-ast #:make-go-ast #:tag-ast
    #:if-ast #:make-if-ast #:test-ast #:then-ast #:else-ast
+   #:multiple-value-call-ast #:make-multiple-value-call-ast
+   #:function-form-ast 
+   #:multiple-value-prog1-ast #:make-multiple-value-prog1-ast
+   #:first-form-ast 
    #:load-time-value-ast #:make-load-time-value-ast #:read-only-p
    #:body-asts
    #:progn-ast #:make-progn-ast #:form-asts
    #:return-from-ast #:make-return-from-ast #:form-ast
    #:setq-ast #:make-setq-ast #:lhs-ast #:value-ast
-   #:tagbody-ast #:make-tagbody-ast #:items
+   #:tagbody-ast #:make-tagbody-ast #:item-asts
    #:tag-ast #:make-tag-ast #:name
-   #:the-ast #:make-the-ast #:type-specifiers #:value-type #:check-p
-   #:typeq-ast #:make-typeq-ast #:type-specifier #:type-specifier-ast
+   #:the-ast #:make-the-ast #:type-specifiers #:check-p
+   #:typeq-ast #:make-typeq-ast #:type-specifier
+   #:bind-ast #:make-bind-ast
    #:eq-ast #:make-eq-ast
    #:car-ast #:make-car-ast #:cons-ast
    #:cdr-ast #:make-cdr-ast
@@ -112,6 +117,7 @@
 
 (defpackage #:cleavir-ast-graphviz
   (:use #:common-lisp #:cleavir-ast)
+  (:shadowing-import-from #:cleavir-ast #:symbol)
   (:export
    #:draw-ast))
 

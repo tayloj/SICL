@@ -23,9 +23,11 @@
 ;;;
 ;;;    return-clause ::= return {form | it}
 
-(defclass return-clause
-    (clause variable-clause-mixin main-clause-mixin)
+(defclass return-clause (unconditional-clause)
   ())
+
+(defmethod accumulation-variables ((clause return-clause))
+  '())
 
 (defclass return-it-clause (return-clause)
   ())
@@ -47,10 +49,10 @@
 (define-parser return-form-clause-parser
   (consecutive (lambda (return form)
 		 (declare (ignore return))
-		 (make-instance 'return-clause
+		 (make-instance 'return-form-clause
 		   :form form))
 	       (keyword-parser 'return)
-	       (singleton #'identity (constantly t))))
+	       'anything-parser))
 
 (define-parser return-clause-parser
   (alternative 'return-it-clause-parser
@@ -58,3 +60,14 @@
 
 (add-clause-parser 'return-clause-parser)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute body-form.
+
+(defmethod body-form ((clause return-form-clause) end-tag)
+  (declare (ignore end-tag))
+  `(return-from ,*loop-name* ,(form clause)))
+
+(defmethod body-form ((clause return-it-clause) end-tag)
+  (declare (ignore end-tag))
+  `(return-from ,*loop-name* ,*it-var*))

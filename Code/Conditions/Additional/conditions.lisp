@@ -1,6 +1,6 @@
 (in-package #:sicl-additional-conditions)
 
-;;;; Copyright (c) 2008, 2009, 2010, 2012
+;;;; Copyright (c) 2008, 2009, 2010, 2012, 2015
 ;;;;
 ;;;;     Robert Strandh (robert.strandh@gmail.com)
 ;;;;
@@ -12,43 +12,13 @@
 ;;;; The software is provided "as-is" with no warranty.  The user of
 ;;;; this software assumes any responsibility of the consequences. 
 
-;;; We use a special variable *signaler* which holds the name of the
-;;; outermost entity to have wrapped WITH-SIGNALER around a call to
-;;; error. 
-
-(defparameter *signaler* nil)
-
-;;; Clients that might signal errors can wrap a call to this macro
-;;; around the code that signals an error.  This macro makes sure that
-;;; the signaler that gets reported is the outermost entity that uses
-;;; it.
-(defmacro with-signaler (signaler &body body)
-  (let ((local-function-name (gensym)))
-    `(flet ((,local-function-name ()
-	      ,@body))
-       (if (null *signaler*)
-	   (let ((*signaler* ,signaler))
-	     (,local-function-name))
-	   (,local-function-name)))))
-
-;;; This condition is used to mix into other conditions that will
-;;; report the construct (function, macro, etc) in which the condition
-;;; was signaled.  Code would typically rely on the value of
-;;; *SIGNALER* to initialize the corresponding slot.  Code that wants
-;;; to override the value of *SIGNALER* can use the :SIGNALER initarg.
-(define-condition signaler-mixin ()
-  ((%signaler :initform *signaler*
-	      :initarg :signaler
-	      :reader signaler)))
-
-(define-condition sicl-condition (signaler-mixin condition) ())
-(define-condition sicl-warning (sicl-condition warning) ())
-(define-condition sicl-style-warning (sicl-condition style-warning) ())
-(define-condition sicl-error (sicl-condition  error) ())
-(define-condition sicl-type-error (sicl-condition type-error) ())
-(define-condition sicl-cell-error (sicl-condition cell-error) ())
-(define-condition sicl-unbound-variable (sicl-condition unbound-variable) ())
-(define-condition sicl-undefined-function (sicl-condition undefined-function) ())
+(define-condition sicl-warning (cleavir-i18n:condition warning) ())
+(define-condition sicl-style-warning (cleavir-i18n:condition style-warning) ())
+(define-condition sicl-error (cleavir-i18n:condition  error) ())
+(define-condition sicl-type-error (cleavir-i18n:condition type-error) ())
+(define-condition sicl-cell-error (cleavir-i18n:condition cell-error) ())
+(define-condition sicl-unbound-variable (cleavir-i18n:condition unbound-variable) ())
+(define-condition sicl-undefined-function (cleavir-i18n:condition undefined-function) ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -116,112 +86,115 @@
 ;;;
 ;;; Compile time conditions. 
 
-(define-condition sicl-program-error (sicl-condition program-error)
+(define-condition sicl-program-error (cleavir-i18n:condition program-error)
+  ())
+
+(define-condition sicl-syntax-error (sicl-program-error)
   ((%code :initarg :code :reader code)))
 
-(define-condition sicl-program-warning (sicl-condition warning)
+(define-condition sicl-program-warning (cleavir-i18n:condition warning)
   ((%code :initarg :code :reader code)))
 
-(define-condition sicl-program-style-warning (sicl-condition style-warning)
+(define-condition sicl-program-style-warning (cleavir-i18n:condition style-warning)
   ((%code :initarg :code :reader code)))
 
 
-(define-condition form-must-be-proper-list (sicl-program-error)
+(define-condition form-must-be-proper-list (sicl-syntax-error)
   ())
 
-(define-condition block-tag-must-be-symbol (sicl-program-error)
+(define-condition block-tag-must-be-symbol (sicl-syntax-error)
   ())
 
-(define-condition body-must-be-proper-list (sicl-program-error)
+(define-condition body-must-be-proper-list (sicl-syntax-error)
   ())
 
-(define-condition multiple-documentation-strings-in-body (sicl-program-error)
+(define-condition multiple-documentation-strings-in-body (sicl-syntax-error)
   ())
 
-(define-condition documentation-string-not-allowed-in-body (sicl-program-error)
+(define-condition documentation-string-not-allowed-in-body (sicl-syntax-error)
   ())
 
-(define-condition declarations-not-allowed-in-body (sicl-program-error)
+(define-condition declarations-not-allowed-in-body (sicl-syntax-error)
   ())
 
-(define-condition declaration-follows-form-in-body  (sicl-program-error)
+(define-condition declaration-follows-form-in-body  (sicl-syntax-error)
   ())
 
-(define-condition form-too-short (sicl-program-error)
+(define-condition form-too-short (sicl-syntax-error)
   ((%min-length :initarg :min-length :reader min-length)))
 
-(define-condition form-too-long (sicl-program-error)
+(define-condition form-too-long (sicl-syntax-error)
   ((%max-length :initarg :max-length :reader max-length)))
 
-(define-condition unknown-eval-when-situation (sicl-program-error)
+(define-condition unknown-eval-when-situation (sicl-syntax-error)
   ())
 
-(define-condition go-tag-must-be-symbol-or-integer (sicl-program-error)
+(define-condition go-tag-must-be-symbol-or-integer (sicl-syntax-error)
   ())
 
-(define-condition setq-must-have-even-number-arguments (sicl-program-error)
+(define-condition setq-must-have-even-number-arguments (sicl-syntax-error)
   ())
 
-(define-condition setq-variable-must-be-symbol (sicl-program-error)
+(define-condition setq-variable-must-be-symbol (sicl-syntax-error)
   ())
 
 (define-condition tagbody-element-must-be-symbol-integer-or-compound-form
-    (sicl-program-error)
+    (sicl-syntax-error)
   ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;;  Lambda list conditions.
 
-(define-condition lambda-list-must-be-list (sicl-program-error)
+(define-condition lambda-list-must-be-list (sicl-syntax-error)
   ())
 
-(define-condition lambda-list-must-not-be-circular (sicl-program-error)
+(define-condition lambda-list-must-not-be-circular (sicl-syntax-error)
   ())
 
-(define-condition lambda-list-must-be-proper-list (sicl-program-error)
+(define-condition lambda-list-must-be-proper-list (sicl-syntax-error)
   ())
 
-(define-condition lambda-list-keyword-not-allowed (sicl-program-error)
+(define-condition lambda-list-keyword-not-allowed (sicl-syntax-error)
   ((%keyword :initarg :keyword :reader lambda-list-keyword)))
 
 (define-condition lambda-list-keyword-not-allowed-in-dotted-lambda-list
-    (sicl-program-error)
+    (sicl-syntax-error)
   ((%keyword :initarg :keyword :reader lambda-list-keyword)))
 
 (define-condition multiple-occurrences-of-lambda-list-keyword
-    (sicl-program-error)
+    (sicl-syntax-error)
   ((%keyword :initarg :keyword :reader lambda-list-keyword)))
 
-(define-condition incorrect-keyword-order (sicl-program-error)
+(define-condition incorrect-keyword-order (sicl-syntax-error)
   ((%keyword1 :initarg :keyword1 :reader lambda-list-keyword1)
    (%keyword2 :initarg :keyword2 :reader lambda-list-keyword2)))
 
-(define-condition both-rest-and-body-occur-in-lambda-list (sicl-program-error)
+(define-condition both-rest-and-body-occur-in-lambda-list (sicl-syntax-error)
   ())
 
-(define-condition rest/body-must-be-followed-by-variable (sicl-program-error)
+(define-condition rest/body-must-be-followed-by-variable (sicl-syntax-error)
   ())
 
-(define-condition atomic-lambda-list-tail-must-be-variable (sicl-program-error)
+(define-condition atomic-lambda-list-tail-must-be-variable (sicl-syntax-error)
   ())
 
-(define-condition whole-must-be-followed-by-variable (sicl-program-error)
+(define-condition whole-must-be-followed-by-variable (sicl-syntax-error)
   ())
 
-(define-condition whole-must-appear-first (sicl-program-error)
+(define-condition whole-must-appear-first (sicl-syntax-error)
   ())
 
-(define-condition whole-must-be-followed-by-variable (sicl-program-error)
+(define-condition whole-must-be-followed-by-variable (sicl-syntax-error)
   ())
 
-(define-condition environment-must-be-followed-by-variable (sicl-program-error)
+(define-condition environment-must-be-followed-by-variable (sicl-syntax-error)
   ())
 
-(define-condition environment-can-appear-at-most-once (sicl-program-error)
+(define-condition environment-can-appear-at-most-once (sicl-syntax-error)
   ())
 
-(define-condition malformed-specialized-required (sicl-program-error)
+(define-condition malformed-specialized-required (sicl-syntax-error)
   ())
 
 ;;; This condition is used to indicate that there is a malformed item
@@ -238,7 +211,7 @@
 ;;;
 ;;; where var and supplied-p-parameter are symbols that are not names
 ;;; of constants.
-(define-condition malformed-ordinary-optional (sicl-program-error)
+(define-condition malformed-ordinary-optional (sicl-syntax-error)
   ())
 
 ;;; This condition is used to indicate that there is a malformed item
@@ -249,7 +222,7 @@
 ;;;   * (var)
 ;;;
 ;;; where var is a symbol that is not a name of a constant.
-(define-condition malformed-defgeneric-optional (sicl-program-error)
+(define-condition malformed-defgeneric-optional (sicl-syntax-error)
   ())
 
 ;;; This condition is used to indicate that there is a malformed item
@@ -264,60 +237,64 @@
 ;;;
 ;;; where var and supplied-p-parameter are symbols that are not names
 ;;; of constants, and pattern is any destructuring pattern.
-(define-condition malformed-destructuring-optional (sicl-program-error)
+(define-condition malformed-destructuring-optional (sicl-syntax-error)
   ())
 
-(define-condition malformed-ordinary-key (sicl-program-error)
+(define-condition malformed-ordinary-key (sicl-syntax-error)
   ())
 
-(define-condition malformed-defgeneric-key (sicl-program-error)
+(define-condition malformed-defgeneric-key (sicl-syntax-error)
   ())
 
-(define-condition malformed-destructuring-key (sicl-program-error)
+(define-condition malformed-destructuring-key (sicl-syntax-error)
   ())
 
-(define-condition malformed-aux (sicl-program-error)
+(define-condition malformed-aux (sicl-syntax-error)
   ())
 
 ;;; This condition is used to indicate that a destructuring tree
 ;;; contains some item other than a CONS cell or a symbol which is not
 ;;; also the name of a constant. 
-(define-condition malformed-destructuring-tree (sicl-program-error)
+(define-condition malformed-destructuring-tree (sicl-syntax-error)
   ())
 
 ;;; This condition is used to indicate that something that ought
 ;;; to be either a destructuring tree or a list with lambda-list
 ;;; keywords in fact is something else, such as a constant or some
 ;;; illegal atomic object.
-(define-condition malformed-lambda-list-pattern (sicl-program-error)
+(define-condition malformed-lambda-list-pattern (sicl-syntax-error)
   ())
 
 ;;; This condition is used to indicate that in a (non destructuring)
 ;;; lambda list, the required parameter must be a variable
-(define-condition required-must-be-variable (sicl-program-error)
+(define-condition required-must-be-variable (sicl-syntax-error)
   ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;;  Argument mismatch conditions.
 
-(define-condition too-few-arguments (program-error)
+(define-condition argument-mismatch (sicl-program-error)
+  ((%lambda-list :initarg :lambda-list :reader lambda-list)
+   (%arguments :initarg :arguments :reader arguments)))
+
+(define-condition too-few-arguments (argument-mismatch)
   ())
 
-(define-condition too-many-arguments (program-error)
+(define-condition too-many-arguments (argument-mismatch)
   ())
 
-(define-condition unrecognized-keyword-argument (program-error)
+(define-condition unrecognized-keyword-argument (argument-mismatch)
   ((%keyword-argument
     :initarg :keyword
     :reader keyword-argument)))
 
-(define-condition invalid-keyword-argument (program-error)
+(define-condition invalid-keyword-argument (argument-mismatch)
   ((%keyword-argument
     :initarg :keyword
     :reader keyword-argument)))
 
-(define-condition odd-number-of-keyword-arguments (program-error)
+(define-condition odd-number-of-keyword-arguments (argument-mismatch)
   ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

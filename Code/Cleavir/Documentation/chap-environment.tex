@@ -3,15 +3,16 @@
 
 \section{Introduction}
 
-Compiling a \cl{} program is done in constant interaction with an
-\emph{environment}.  The \hs{} stipulates%
+Compiling a \commonlisp{} program is done in constant interaction with
+an \emph{environment}.  The \hs{} stipulates%
 \footnote{See Section 3.2.1 of the \hs{}.}
 that there are four different environments that are relevant to
 compilation:
 
 \begin{itemize}
 \item The \emph{startup environment}.  This environment is the global
-  environment of the \cl{} system when the compiler was invoked.
+  environment of the \commonlisp{} system when the compiler was
+  invoked.
 \item The \emph{compilation environment}.  This environment is the
   local environment in which forms are compiled.  It is also the
   environment that is passed to macro expanders.
@@ -992,17 +993,28 @@ This class is the base class of all entries in this section.
 
 \Defclass {lexical-variable}
 
-This class represents a lexical variable.
+This class represents a lexical variable.  It is a subclass of the
+class \texttt{entry}
 
 \Definitarg {:name}
 
+This initarg is used to specify the name of the lexical variable.  The
+value must be a symbol.  This initarg must be supplied.
+
 \Defmethod {name} {(entry {\tt lexical-variable})}
+
+Given an instance of the class \texttt{lexical-variable}, this method
+returns the name of the lexical variable as supplied by the initarg
+\texttt{:name}.
 
 \subsection {Special variable}
 
 \Defclass {special-variable}
 
 \Definitarg {:name}
+
+This initarg is used to specify the name of the special variable.  The
+value must be a symbol.  This initarg must be supplied.
 
 \Definitarg {:global-p}
 
@@ -1012,6 +1024,10 @@ proclaimed as special.  If omitted, the default value is
 
 \Defmethod {name} {(entry {\tt special-variable})}
 
+Given an instance of the class \texttt{special-variable}, this method
+returns the name of the special variable as supplied by the initarg
+\texttt{:name}.
+
 \Defmethod {global-p} {(entry {\tt special-variable})}
 
 \subsection {Symbol macro}
@@ -1020,58 +1036,193 @@ proclaimed as special.  If omitted, the default value is
 
 \Definitarg {:name}
 
+This initarg is used to specify the name of the symbol macro.  The
+value must be a symbol.  This initarg must be supplied.
+
 \Definitarg {:expansion}
 
-\Defmethod {name} {(entry {\tt lexical-variable})}
+\Defmethod {name} {(entry {\tt symbol-macro})}
 
-\Defmethod {expansion} {(entry {\tt lexical-variable})}
+Given an instance of the class \texttt{symbol-macro}, this method
+returns the name of the symbol macro as supplied by the initarg
+\texttt{:name}.
+
+\Defmethod {expansion} {(entry {\tt symbol-macro})}
 
 \subsection {Function}
 
 \Defclass {function}
 
+\Definitarg {:name}
+
+This initarg is used to specify the name of the function.  The value
+must be a function name.  This initarg must be supplied.
+
+\Definitarg {:identity}
+
+\Defmethod {name} {(entry {\tt function})}
+
+Given an instance of the class \texttt{function}, this method returns
+the name of the function as supplied by the initarg \texttt{:name}.
+
+\Defmethod {identity} {(entry {\tt function})}
+
 \subsection {Macro}
 
 \Defclass {macro}
+
+\Definitarg {:name}
+
+This initarg is used to specify the name of the macro.  The
+value must be a symbol.  This initarg must be supplied.
+
+\Definitarg {:expander}
+
+\Defmethod {name} {(entry {\tt macro})}
+
+Given an instance of the class \texttt{macro}, this method returns
+the name of the macro as supplied by the initarg \texttt{:name}.
+
+\Defmethod {expander} {(entry {\tt macro})}
 
 \subsection {Block}
 
 \Defclass {block}
 
+\Definitarg {:name}
+
+This initarg is used to specify the name of the block.  The
+value must be a symbol.  This initarg must be supplied.
+
+\Definitarg {:identity}
+
+\Defmethod {name} {(entry {\tt block})}
+
+\Defmethod {identity} {(entry {\tt block})}
+
 \subsection {Tag}
 
 \Defclass {tag}
+
+\Definitarg {:name}
+
+This initarg is used to specify the name of the tag.  The value must
+be a go tag, i.e. a symbol or an integer.  This initarg must be
+supplied.
+
+\Definitarg {:identity}
+
+\Defmethod {name} {(entry {\tt tag})}
+
+\Defmethod {identity} {(entry {\tt tag})}
 
 \subsection {Variable type}
 
 \Defclass {variable-type}
 
+\Definitarg {:name}
+
+This initarg is used to specify the name of the variable.  The value
+must be a symbol.  This initarg must be supplied.
+
+\Definitarg {:type}
+
+\Defmethod {name} {(entry {\tt variable-type})}
+
+\Defmethod {type} {(entry {\tt variable-type})}
+
 \subsection {Function type}
 
 \Defclass {function-type}
+
+\Definitarg {:name}
+
+This initarg is used to specify the name of the function.  The
+value must be a function name.  This initarg must be supplied.
+
+\Definitarg {:type}
+
+\Defmethod {name} {(entry {\tt function-type})}
+
+\Defmethod {type} {(entry {\tt function-type})}
 
 \subsection {Variable ignore}
 
 \Defclass {variable-ignore}
 
+\Definitarg {:name}
+
+This initarg is used to specify the name of the variable.  The value
+must be a symbol.  This initarg must be supplied.
+
+\Definitarg {:ignore}
+
+\Defmethod {name} {(entry {\tt variable-ignore})}
+
+\Defmethod {ignore} {(entry {\tt variable-ignore})}
+
 \subsection {Function ignore}
 
 \Defclass {function-ignore}
+
+\Definitarg {:name}
+
+This initarg is used to specify the name of the function.  The
+value must be a function name.  This initarg must be supplied.
+
+\Definitarg {:ignore}
+
+\Defmethod {name} {(entry {\tt function-ignore})}
+
+\Defmethod {ignore} {(entry {\tt function-ignore})}
 
 \subsection {Variable dynamic extent}
 
 \Defclass {variable-dynamic-extent}
 
+\Definitarg {:name}
+
+This initarg is used to specify the name of the lexical variable.  The
+value must be a symbol.  This initarg must be supplied.
+
+\Defmethod {name} {(entry {\tt variable-dynamic-extent})}
+
 \subsection {Function dynamic-extent}
 
 \Defclass {function-dynamic-extent}
+
+\Definitarg {:name}
+
+This initarg is used to specify the name of the function.  The
+value must be a function name.  This initarg must be supplied.
+
+\Defmethod {name} {(entry {\tt function-dynamic-extent})}
 
 \subsection {Inline}
 
 \Defclass {inline}
 
+\Definitarg {:name}
+
+This initarg is used to specify the name of the function.  The
+value must be a function name.  This initarg must be supplied.
+
+\Definitarg {:inline}
+
+\Defmethod {name} {(entry {\tt inline})}
+
+\Defmethod {inline} {(entry {\tt inline})}
+
 \subsection {Optimize}
 
 \Defclass {optimize}
+
+\Definitarg {:quality}
+
+\Definitarg {:value}
+
+\Defmethod {quality} {(entry {\tt optimize})}
+
+\Defmethod {value} {(entry {\tt optimize})}
 
 %%  LocalWords:  startup expanders expander subclasses

@@ -14,6 +14,8 @@
 	   #:space
 	   #:debug
 	   #:eval
+	   #:macro-function
+	   #:compiler-macro-function
 	   #:function
 	   #:block
 	   #:inline
@@ -33,10 +35,12 @@
    #:block-info
    #:tag-info
    #:optimize-info
+   #:global-environment
    #:name
    #:identity
    #:type
    #:ignore
+   #:hir
    #:dynamic-extent
    #:value
    #:expansion
@@ -68,6 +72,9 @@
    #:add-optimize
    #:add-inline
    #:eval
+   #:macro-function
+   #:compiler-macro-function
+   #:symbol-macro-expansion
    #:lexical-variable
    #:special-variable
    #:global-p

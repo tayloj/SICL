@@ -12,8 +12,10 @@
 
 (cl:in-package #:sicl-loop)
 
-(defclass always-clause (clause)
-  ((%form :initarg :form :reader form)))
+(defclass always-clause (termination-test-clause form-mixin) ())
+
+(defmethod accumulation-variables ((clause always-clause))
+  `((nil always/never t)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -25,6 +27,15 @@
 		 (make-instance 'always-clause
 		   :form form))
 	       (keyword-parser 'always)
-	       (singleton #'identity (constantly t))))
+	       'anything-parser))
 
 (add-clause-parser 'always-clause-parser)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute the body-form
+
+(defmethod body-form ((clause always-clause) end-tag)
+  (declare (ignore end-tag))
+  `(unless ,(form clause)
+     (return-from ,*loop-name* nil)))

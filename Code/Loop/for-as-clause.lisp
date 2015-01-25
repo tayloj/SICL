@@ -53,29 +53,15 @@
 ;;;    for-as-package-clause ::=
 ;;;      {for | as} for-as-package {and for-as-subclause}* 
 
-(defclass for-as-clause (clause subclauses-mixin variable-clause-mixin) ())
+(defclass for-as-clause (variable-clause subclauses-mixin) ())
 
 (defclass for-as-subclause (var-and-type-spec-mixin)
-  (;; The value of this slot is a list of bindings of the form
-   ;; (<variable> <form>) where <variable> is a either the loop
-   ;; variable associated with this subclause, or a symbol created by
-   ;; GENSYM and <form> depends on the origin of the binding.
-   (%bindings :initarg :bindings :reader bindings)
-   ;; The value of this slot is a list of declarations (without the
-   ;; `declare' symbol).  These declarations go at the beginning of
-   ;; the body of the LET form that introduces the bindings. 
-   (%declarations :initarg :declarations :reader declarations)
-   ;; The value of this slot is a form that goes in the prologue.  It
-   ;; contains assignments of values to the loop variables with the
-   ;; forms that appear in the subclause.
-   (%prologue :initarg :prologue :reader prologue)
-   ;; The value of this slot is either NIL, meaning that there is no
-   ;; termination condition for this subclause, or a form to be
-   ;; evaluated before the iteration of the loop starts.
-   (%termination :initarg :termination :reader termination)
-   ;; The value of this slot is a form that goes at the end of the
-   ;; loop body.
-   (%step :initarg :step :reader step)))
+  ())
+
+(defmethod bound-variables ((clause for-as-clause))
+  (reduce #'append
+	  (mapcar #'bound-variables (subclauses clause))
+	  :from-end t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -126,8 +112,12 @@
 ;;;
 ;;; Compute the bindings.
 
-(defmethod bindings ((clause for-as-clause))
-  (reduce #'append (mapcar #'bindings (subclauses clause))
+(defmethod initial-bindings ((clause for-as-clause))
+  (reduce #'append (mapcar #'initial-bindings (subclauses clause))
+	  :from-end t))
+
+(defmethod final-bindings ((clause for-as-clause))
+  (reduce #'append (mapcar #'final-bindings (subclauses clause))
 	  :from-end t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -140,29 +130,34 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Compute the prologue.
+;;; Compute the prologue-form.
 
-(defmethod prologue ((clause for-as-clause))
-  `(progn ,@(mapcar #'prologue (subclauses clause))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
-;;; Compute the termination.
-
-(defmethod termination ((clause for-as-clause))
-  `(progn ,@(mapcar #'termination (subclauses clause))))
+(defmethod prologue-form ((clause for-as-clause) end-tag)
+  `(progn ,@(mapcar (lambda (subclause)
+		      (prologue-form subclause end-tag))
+		    (subclauses clause))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Compute the body.
+;;; Compute the termination-form.
 
-(defmethod body ((clause for-as-clause))
-  `(progn ,@(mapcar #'body (subclauses clause))))
+(defmethod termination-form ((clause for-as-clause) end-tag)
+  `(progn ,@(mapcar (lambda (subclause)
+		      (termination-form subclause end-tag))
+		    (subclauses clause))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute the body-form.
+
+(defmethod body-form ((clause for-as-clause) end-tag)
+  `(progn ,@(mapcar (lambda (clause)
+		      (body-form clause end-tag))
+		    (subclauses clause))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Step a FOR-AS clause.
 
-(defmethod step ((clause for-as-clause))
-  (reduce #'append (mapcar #'step (subclauses clause))
-	  :from-end t))
+(defmethod step-form ((clause for-as-clause))
+  `(progn ,@(mapcar #'step-form (subclauses clause))))

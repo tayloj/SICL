@@ -52,16 +52,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Drawing an IMMEDIATE-AST. 
-
-(defmethod stream-draw-ast ((ast immediate-ast) stream)
-  (format stream "   ~a [style = filled, fillcolor = aquamarine];~%" (id ast))
-  (format stream "   ~a [label = \"~a\"];~%"
-	  (id ast)
-	  (value ast)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
 ;;; Drawing a CONSTANT-AST.
 
 (defmethod stream-draw-ast ((ast constant-ast) stream)
@@ -98,6 +88,28 @@
 	  (id ast) (form-ast ast))
   (format stream "   ~a [style = filled, fillcolor = pink];~%"
 	  (id ast)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Drawing a BIND-AST.
+
+(defmethod stream-draw-ast ((ast bind-ast) stream)
+  (format stream "   ~a [shape = box, label = \"bind\"];~%"
+	  (id ast))
+  (let ((symbol-id (gensym)))
+    (format stream "   ~a [shape = ellipse, label = \"~a\"];~%"
+	    symbol-id (symbol ast))
+    (format stream "   ~a -> ~a [label = \"0\"];~%"
+	    (id ast) symbol-id)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Drawing a THE-AST.
+
+(defmethod stream-draw-ast ((ast the-ast) stream)
+  (format stream "   ~a [label = \"the ~s\"];~%"
+	  (id ast)
+	  (cleavir-ast:type-specifiers ast)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

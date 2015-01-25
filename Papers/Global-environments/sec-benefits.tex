@@ -1,0 +1,50 @@
+\section{Benefits of our method}
+ 
+\subsection{Cross compilation}
+
+\subsection{Native compilation}
+
+The \commonlisp{} standards suggests that the \emph{startup
+  environment} and the \emph{evaluation environment} may be
+different.%
+\footnote{Recall that the startup environment is the global
+environment as it was when the compilation was initiated, and that the
+evaluation environment is the global environment in which evaluations
+initiated by the compiler are accomplished.}
+Our method allows most evaluations by the compiler to have no
+influence in the startup environment.  It suffices to \emph{clone} the
+startup environment in order to obtains the evaluation environment. 
+
+With the method described in the previous section, some evaluations
+by the compiler would have side effects in the startup environment.
+In particular, the value cells and function cells are shared.
+Therefore, executing code at compile time that alters the global
+binding of a function or a variable will also be seen in the startup
+environment.  
+
+\subsection{Bootstrapping}
+
+\subsection{Sanboxing}
+
+It is notoriously hard to create a so-called \emph{sandbox
+  environment} for \commonlisp{}, i.e., an environment that contains
+a subset of the full languages.  A typical use case would be to
+propose a Read-Eval-Print Loop accessible through a web interface for
+educational purposes.  Such a sandbox environment is hard to achieve
+because functions such as \texttt{eval} and \texttt{compile} would
+have to be removed so that the environment could not be destroyed by a
+careless user.  However, these functions are typically used by parts
+of the system.  For example, \clos{} might need the compiler in order
+to generate dispatch code.
+
+The root of the problem is that in \commonlisp{} there is always a way
+for the user of a Read-Eval-Print Loop to access every global function
+in the system, including the compiler.
+
+Using first-class global environments solves this problem in an
+elegant way.  It suffices to propose a restricted environment in which
+there is no binding from the names \texttt{eval} and \texttt{compile}
+to the corresponding functions.  These functions can still be
+available in some other environment for use by the system itself.
+
+%%  LocalWords:  Sanboxing startup

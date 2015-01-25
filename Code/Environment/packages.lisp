@@ -7,77 +7,51 @@
   ;; purpose of cross compilation, we shadow the symbols of the
   ;; COMMON-LISP package that name functions and variables that have
   ;; to do with manipulating the environment.
-  (:shadow #:type
-	   #:proclaim
-	   #:macroexpand-1
-	   #:macroexpand
-	   #:macro-function
-	   #:*macroexpand-hook*
+  (:shadow #:fboundp
 	   #:fdefinition
-	   #:symbol-function
-	   #:fboundp
-	   #:fmakunbound
-	   #:special-operator-p
+	   #:macro-function
 	   #:compiler-macro-function
-	   #:symbol-value
 	   #:boundp
 	   #:makunbound
-	   #:constantp
+	   #:fmakunbound
+	   #:find-class
+	   #:find-package
+	   #:get-setf-expansion
 	   )
   (:export
-   #:proclaim
-   #:definition
-   #:location
-   #:lexical-location #:make-lexical-location
-   #:global-location #:make-global-location
-   #:special-location #:make-special-location
-   #:storage
-   #:name
-   #:type
-   #:*global-environment*
-   #:add-to-global-environment
-   #:make-entry-from-declaration
-   #:find-variable
-   #:find-function
-   #:macroexpand-1
-   #:macroexpand
-   #:fully-expand-form
-   #:find-type
-   #:find-ftype
-   #:augment-environment
-   #:augment-environment-with-declarations
-   #:add-lexical-variable-entry
-   #:add-symbol-macro-entry
-   #:add-local-function-entry
-   #:add-local-macro-entry
-   #:add-block-entry
-   #:add-go-tag-entry
-   #:constant-variable-info
-   #:macro-info
-   #:symbol-macro-info
-   #:block-info
-   #:tag-info
-   #:location-info
-   #:special-location-info
-   #:lexical-location-info
-   #:global-location-info
-   #:function-info
-   #:inline-info #:ast #:parameters
-   #:variable-info
-   #:fdefinition
+   #:environment
    #:fboundp
-   #:fmakunbound
-   #:find-function-cell
-   #:special-operator-p
-   #:symbol-macro-function
-   #:symbol-value
+   #:fdefinition
+   #:macro-function
+   #:compiler-macro-function
+   #:function-type
+   #:function-inline
+   #:function-cell
+   #:function-unbound
+   #:function-hir
+   #:constant-variable
+   #:special-variable
+   #:symbol-macro
+   #:variable-type
+   #:setf-expander
+   #:default-setf-expander
+   #:type-expander
    #:boundp
    #:makunbound
-   #:find-value-cell
-   #:constantp
-   #:defmacro
-   #:deftype
-   #:define-compiler-macro
-   #:ensure-global-function-entry
+   #:fmakunbound
+   #:variable-cell
+   #:variable-unbound
+   #:find-class
+   #:packages
+   #:find-package
+   #:special-operator
+   #:get-setf-expansion
+   #:*global-environment*
    ))
 
+(defpackage #:sicl-standard-environment-functions
+  (:shadow #:variable)
+  (:use #:common-lisp))
+
+(defpackage #:sicl-standard-environment-macros
+  (:use #:common-lisp))

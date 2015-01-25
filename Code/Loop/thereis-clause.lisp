@@ -12,8 +12,10 @@
 
 (cl:in-package #:sicl-loop)
 
-(defclass thereis-clause (clause)
-  ((%form :initarg :form :reader form)))
+(defclass thereis-clause (termination-test-clause form-mixin) ())
+
+(defmethod accumulation-variables ((clause thereis-clause))
+  `((nil thereis t)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -25,6 +27,16 @@
 		 (make-instance 'thereis-clause
 		   :form form))
 	       (keyword-parser 'thereis)
-	       (singleton #'identity (constantly t))))
+	       'anything-parser))
 
 (add-clause-parser 'thereis-clause-parser)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute the body-form
+
+(defmethod body-form ((clause thereis-clause) end-tag)
+  (declare (ignore end-tag))
+  `(let ((temp ,(form clause)))
+     (when temp
+       (return-from ,*loop-name* temp))))

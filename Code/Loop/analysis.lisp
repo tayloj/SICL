@@ -16,92 +16,92 @@
 ;;;
 ;;; Syntactic and semantic analysis
 
-(defun verify-clause-order (loop-body)
-  (let ((clauses (clauses loop-body)))
-    ;; Check that if there is a name-clause, the first one is in
-    ;; position 0.  For now, we do not care if there is more than one
-    ;; name-clause.
-    (let ((name-clause-position
-	   (position-if (lambda (clause) (typep clause 'name-clause))
-			clauses)))
-      (when (and (not (null name-clause-position)) (plusp name-clause-position))
-	(error 'name-clause-not-first)))
-    ;; Check that, if the first clause is a name-clause, there is not
-    ;; a second name-clause.  We have already tested the case when
-    ;; there is a name-clause other than in the first position.
-    (when (typep (car clauses) 'name-clause)
-      (let ((second-name-clause
-	     (find-if (lambda (clause) (typep clause 'name-clause))
-		      (cdr clauses))))
-	(when (not (null second-name-clause))
-	  (error 'multiple-name-clauses))))
-    ;; Check that there is not a variable-clause (other than an
-    ;; initially-clause or a finally-clause) following a name clause
-    ;; (other than an initially-clause or a finally-clause). 
-    (let ((last-variable-clause-position
-	   (position-if (lambda (clause)
-			  (and (typep clause 'variable-clause-mixin)
-			       (not (typep clause 'initially-clause))
-			       (not (typep clause 'finally-clause))))
-			clauses
-			:from-end t))
-	  (first-main-clause-position
-	   (position-if (lambda (clause)
-			  (and (typep clause 'main-clause-mixin)
-			       (not (typep clause 'initially-clause))
-			       (not (typep clause 'finally-clause))))
-			clauses)))
-      (when (and (not (null last-variable-clause-position))
-		 (not (null first-main-clause-position))
-		 (> last-variable-clause-position first-main-clause-position))
-	(error 'invalid-clause-order)))))
+;;; Check that if there is a name-clause, the last one is in position
+;;; zero.
+(defun check-name-clause-position (clauses)
+  (let ((name-clause-position
+	  (position-if (lambda (clause) (typep clause 'name-clause)) clauses
+		       :from-end t)))
+    (when (and (not (null name-clause-position)) (plusp name-clause-position))
+      (error 'name-clause-not-first))))
 
-(defun destructure-variables (d-var-spec root)
-  (let ((bindings '())
-	(ignorables '()))
-    (labels ((destructure-aux (d-var-spec root)
-	       (cond ((null d-var-spec)
-		      nil)
-		     ((symbolp d-var-spec)
-		      (push `(,d-var-spec ,root) bindings))
-		     ((not (consp d-var-spec))
-		      (error 'expected-var-spec-but-found
-			     :found d-var-spec))
-		     (t
-		      (let ((head (gensym))
-			    (tail (gensym)))
-			(push head ignorables)
-			(push tail ignorables)
-			(push `(,head (car ,root)) bindings)
-			(push `(,tail (cdr ,root)) bindings)
-			(destructure-aux (car d-var-spec) head)
-			(destructure-aux (cdr d-var-spec) tail))))))
-      (destructure-aux d-var-spec root)
-      (values (nreverse bindings) (nreverse ignorables)))))
+;;; Check that there is not a variable-clause following a main clause.
+;;; Recall that we diverge from the BNF grammar in the HyperSpec so
+;;; that INITIALLY and FINALLY are neither main clauses nor variable
+;;; clauses.
+(defun check-order-variable-clause-main-clause (clauses)
+  (let ((last-variable-clause-position
+	  (position-if (lambda (clause)
+			 (typep clause 'variable-clause))
+		       clauses
+		       :from-end t))
+	(first-main-clause-position
+	  (position-if (lambda (clause)
+			 (typep clause 'main-clause))
+		       clauses)))
+    (when (and (not (null last-variable-clause-position))
+	       (not (null first-main-clause-position))
+	       (> last-variable-clause-position first-main-clause-position))
+      (error 'invalid-clause-order))))
 
-;;; Extract variables
-(defun extract-variables (d-var-spec d-type-spec)
-  (let ((result '()))
-    (labels ((extract-aux (d-var-spec d-type-spec)
-	       (cond ((null d-var-spec)
-		      nil)
-		     ((symbolp d-var-spec)
-		      (push (list d-var-spec (or d-type-spec t)) result))
-		     ((symbolp d-type-spec)
-		      (if (not (consp d-var-spec))
-			  (error 'expected-var-spec-but-found
-				 :found d-var-spec)
-			  (progn (extract-aux (car d-var-spec) d-type-spec)
-				 (extract-aux (cdr d-var-spec) d-type-spec))))
-		     ((not (consp d-var-spec))
-		      (error 'expected-var-spec-but-found
-			     :found d-var-spec))
-		     ((not (consp d-type-spec))
-		      (error 'expected-type-spec-but-found
-			     :found d-type-spec))
-		     (t
-		      (extract-aux (car d-var-spec) (car d-type-spec))
-		      (extract-aux (cdr d-var-spec) (cdr d-type-spec))))))
-      (extract-aux d-var-spec d-type-spec)
-      result)))
+(defun verify-clause-order (clauses)
+  (check-name-clause-position clauses)
+  (check-order-variable-clause-main-clause clauses))
 
+(defun check-variable-uniqueness (clauses)
+  (let* ((variables (reduce #'append (mapcar #'bound-variables clauses)
+			    :from-end t))
+	 (unique-variables (remove-duplicates variables :test #'eq)))
+    (unless (= (length variables)
+	       (length unique-variables))
+      (loop for var in unique-variables
+	    do (when (> (count var variables :test #'eq) 1)
+		 (error 'multiple-variable-occurrences
+			:bound-variable var))))))
+
+;;; Check that for a given accumulation variable, there is only one
+;;; category.  Recall that the accumlation categores are represented
+;;; by the symbols LIST, COUNT/SUM, and MAX/MIN.
+(defun check-accumulation-categories (clauses)
+  (let* ((descriptors (reduce #'append
+			      (mapcar #'accumulation-variables clauses)))
+	 (equal-fun (lambda (d1 d2)
+		      (and (eq (first d1) (first d2))
+			   (eq (second d1) (second d2)))))
+	 (unique (remove-duplicates descriptors :test equal-fun)))
+    (loop for remaining on unique
+	  do (let ((entry (member (first (first remaining))
+				  (rest remaining)
+				  :test #'eq
+				  :key #'first)))
+	       (unless (null entry)
+		 (error "the accumulation variable ~s is used both~@
+                         for ~s accumulation and ~s accumulation."
+			(first (first remaining))
+			(second (first remaining))
+			(second (first entry))))))))
+
+;;; Check that there is no overlap between the bound variables and the
+;;; accumulation variables.
+(defun check-no-variable-overlap (clauses)
+  (let ((bound-variables
+	  (reduce #'append (mapcar #'bound-variables clauses)
+		  :from-end t))
+	(accumulation-variables
+	  (mapcar #'first
+		  (reduce #'append
+			  (mapcar #'accumulation-variables clauses)))))
+    (let ((intersection
+	    (intersection bound-variables accumulation-variables
+			  :test #'eq)))
+      (unless (null intersection)
+	(error "The variable ~s is used both as an iteration variable~@
+                and as an accumulation variable."
+	       (car intersection))))))
+
+;;; FIXME: Add more analyses.
+(defun analyze-clauses (clauses)
+  (verify-clause-order clauses)
+  (check-variable-uniqueness clauses)
+  (check-accumulation-categories clauses)
+  (check-no-variable-overlap clauses))

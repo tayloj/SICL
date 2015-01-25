@@ -1,10 +1,8 @@
 (in-package #:common-lisp-user)
 
 (defpackage #:sicl-additional-conditions
-  (:use #:common-lisp #:sicl-additional-types #:sicl-internationalization)
+  (:use #:common-lisp #:sicl-additional-types)
   (:export
-   #:signaler-mixin
-   #:with-signaler
    #:sicl-condition
    #:sicl-warning
    #:sicl-style-warning

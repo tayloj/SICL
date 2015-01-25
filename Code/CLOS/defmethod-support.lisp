@@ -1,19 +1,21 @@
 (cl:in-package #:sicl-clos)
 
-(defun parse-defmethod (args)
-  (let ((name (pop args))
-	(qualifiers (loop while (and (consp args) (not (listp (car args))))
-			  collect (pop args)))
-	(lambda-list (pop args)))
-    ;; FIXME: handle declarations and documentation
-    (let* ((parsed-lambda-list (parse-specialized-lambda-list lambda-list))
-	   (required (required parsed-lambda-list)))
-      (values name
-	      qualifiers
+(defun parse-defmethod (all-but-name)
+  (let* ((lambda-list-position (position-if #'listp all-but-name))
+	 (qualifiers (subseq all-but-name 0 lambda-list-position))
+	 (lambda-list (elt all-but-name lambda-list-position))
+	 (body (subseq all-but-name (1+ lambda-list-position)))
+	 (parsed-lambda-list (parse-specialized-lambda-list lambda-list))
+	 (required (required parsed-lambda-list)))
+    (multiple-value-bind (declarations documentation forms)
+	(cleavir-code-utilities:separate-function-body body)
+      (values qualifiers
 	      (append (mapcar #'car required)
 		      (subseq lambda-list (length required)))
 	      (mapcar #'cadr required)
-	      args))))
+	      declarations
+	      documentation
+	      forms))))
 
 (defun canonicalize-specializer (specializer)
   (cond ((symbolp specializer)

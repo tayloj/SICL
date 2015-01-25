@@ -12,40 +12,31 @@
 
 (cl:in-package #:sicl-loop)
 
-(define-parser selectable-clause-parser
-  (alternative 'do-clause-parser
-	       'return-clause-parser
-	       'collect-clause-parser
-	       'append-clause-parser
-	       'nconc-clause-parser
-	       'count-clause-parser
-	       'sum-clause-parser
-	       'maximize-clause-parser
-	       'minimize-clause-parser
-	       'conditional-clause-parser))
-	       
-(define-parser and-selectable-clause-parser
-  (consecutive (lambda (and selectable-clause)
-		 (declare (ignore and))
-		 selectable-clause)
-	       (keyword-parser 'and)
-	       'selectable-clause-parser))
+(defclass conditional-clause (selectable-clause)
+  ((%condition :initarg :condition :reader condition)
+   (%then-clauses :initarg :then-clauses :reader then-clauses)
+   (%else-clauses :initarg :else-clauses :reader else-clauses)))
+
+;;; A conditional clause does not introduce any bindings for any
+;;; variables, so this method should return the empty list.
+(defmethod bound-variables ((clause conditional-clause))
+  '())
+
+(defmethod accumulation-variables ((clause conditional-clause))
+  (append (reduce #'append
+		  (mapcar #'accumulation-variables (then-clauses clause)))
+	  (reduce #'append
+		  (mapcar #'accumulation-variables (else-clauses clause)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Parsers.
 
 (define-parser then-or-else-parser
   (consecutive #'cons
 	       'selectable-clause-parser
 	       (repeat* #'list
 			'and-selectable-clause-parser)))
-
-(defclass conditional-clause (clause)
-  ((%condition :initarg :condition :reader condition)
-   (%then-clauses :initarg :then-clauses :reader then-clauses)
-   (%else-clauses :initarg :else-clauses :reader else-clauses)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
-;;; Parsers.
-
 (define-parser if-else-end-clause-parser
   (consecutive (lambda (if form then-clauses else else-clauses end)
 		 (declare (ignore if else end))
@@ -55,7 +46,7 @@
 		   :else-clauses else-clauses))
 	       (alternative (keyword-parser 'if)
 			    (keyword-parser 'when))
-	       (singleton #'identity (constantly t))
+	       'anything-parser
 	       'then-or-else-parser
 	       (keyword-parser 'else)
 	       'then-or-else-parser
@@ -70,7 +61,7 @@
 		   :else-clauses nil))
 	       (alternative (keyword-parser 'if)
 			    (keyword-parser 'when))
-	       (singleton #'identity (constantly t))
+	       'anything-parser
 	       'then-or-else-parser
 	       (keyword-parser 'end)))
 	       
@@ -83,7 +74,7 @@
 		   :else-clauses else-clauses))
 	       (alternative (keyword-parser 'if)
 			    (keyword-parser 'when))
-	       (singleton #'identity (constantly t))
+	       'anything-parser
 	       'then-or-else-parser
 	       (keyword-parser 'else)
 	       'then-or-else-parser))
@@ -97,8 +88,14 @@
 		   :else-clauses nil))
 	       (alternative (keyword-parser 'if)
 			    (keyword-parser 'when))
-	       (singleton #'identity (constantly t))
+	       'anything-parser
 	       'then-or-else-parser))
+
+(define-parser if-when-parser
+  (alternative 'if-else-end-clause-parser
+	       'if-end-clause-parser
+	       'if-else-clause-parser
+	       'if-clause-parser))
 
 (define-parser unless-else-end-clause-parser
   (consecutive (lambda (unless form else-clauses else then-clauses end)
@@ -108,7 +105,7 @@
 		   :then-clauses then-clauses
 		   :else-clauses else-clauses))
 	       (keyword-parser 'unless)
-	       (singleton #'identity (constantly t))
+	       'anything-parser
 	       'then-or-else-parser
 	       (keyword-parser 'else)
 	       'then-or-else-parser
@@ -122,7 +119,7 @@
 		   :then-clauses nil
 		   :else-clauses else-clauses))
 	       (keyword-parser 'unless)
-	       (singleton #'identity (constantly t))
+	       'anything-parser
 	       'then-or-else-parser
 	       (keyword-parser 'end)))
 	       
@@ -134,7 +131,7 @@
 		   :then-clauses then-clauses
 		   :else-clauses else-clauses))
 	       (keyword-parser 'unless)
-	       (singleton #'identity (constantly t))
+	       'anything-parser
 	       'then-or-else-parser
 	       (keyword-parser 'else)
 	       'then-or-else-parser))
@@ -148,6 +145,34 @@
 		   :else-clauses else-clauses))
 	       (alternative (keyword-parser 'unless)
 			    (keyword-parser 'when))
-	       (singleton #'identity (constantly t))
+	       'anything-parser
 	       'then-or-else-parser))
 
+(define-parser unless-parser
+  (alternative 'unless-else-end-clause-parser
+	       'unless-end-clause-parser
+	       'unless-else-clause-parser
+	       'unless-clause-parser))
+
+(define-parser conditional-clause-parser
+  (alternative 'if-when-parser
+	       'unless-parser))
+
+(add-clause-parser 'conditional-clause-parser)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute body-form.
+
+(defmethod body-form ((clause conditional-clause) end-tag)
+  (let ((*it-var* (gensym)))
+    `(let ((,*it-var* ,(condition clause)))
+       (if ,*it-var*
+	   (progn
+	     ,@(mapcar (lambda (clause)
+			 (body-form clause end-tag))
+		       (then-clauses clause)))
+	   (progn
+	     ,@(mapcar (lambda (clause)
+			 (body-form clause end-tag))
+		       (else-clauses clause)))))))

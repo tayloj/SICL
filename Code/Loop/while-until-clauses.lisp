@@ -12,7 +12,7 @@
 
 (cl:in-package #:sicl-loop)
 
-(defclass while-clause (clause)
+(defclass while-clause (termination-test-clause)
   ((%form :initarg :form :reader form)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -25,7 +25,7 @@
 		 (make-instance 'while-clause
 		   :form form))
 	       (keyword-parser 'while)
-	       (singleton #'identity (constantly t))))
+	       'anything-parser))
 
 (add-clause-parser 'while-clause-parser)
 
@@ -35,6 +35,14 @@
 		 (make-instance 'while-clause
 		   :form `(not ,form)))
 	       (keyword-parser 'until)
-	       (singleton #'identity (constantly t))))
+	       'anything-parser))
   
 (add-clause-parser 'until-clause-parser)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Compute the body-form
+
+(defmethod body-form ((clause while-clause) end-tag)
+  `(unless ,(form clause)
+     (go ,end-tag)))

@@ -5,10 +5,10 @@
   :serial t
   :components
   ((:file "packages")
-   (:file "general")
-   (:file "fixnum")
-   (:file "float")
-   (:file "cons")
-   (:file "standard-object")
-   (:file "array")
+   (:file "general-purpose-asts")
+   (:file "fixnum-related-asts")
+   (:file "float-related-asts")
+   (:file "cons-related-asts")
+   (:file "standard-object-related-asts")
+   (:file "array-related-asts")
    (:file "graphviz-drawing")))

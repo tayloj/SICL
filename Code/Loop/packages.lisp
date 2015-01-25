@@ -19,13 +19,11 @@
   (:use #:common-lisp
 	#:sicl-additional-conditions)
   (:shadow
-   ;; There is a Common Lisp function called STEP, so we need to
-   ;; shadow this name.
-   #:step
    ;; We use TYPE as an accessor for a TYPE-SPEC so we need to shadow
    ;; this name.
    #:type
    ;; We use CONDITION as an accessor for a conditional clause so we
    ;; need to shadow this name
    #:condition
-   ))
+   )
+  (:export #:define-parser))

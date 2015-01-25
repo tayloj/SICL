@@ -1,18 +1,18 @@
 (cl:in-package #:cleavir-environment)
 
-(defgeneric add-lexical-variable (environment symbol))
+(defgeneric add-lexical-variable (environment symbol &optional identity))
 
 (defgeneric add-special-variable (environment symbol))
 
 (defgeneric add-local-symbol-macro (environment symbol expansion))
 
-(defgeneric add-local-function (environment function-name))
+(defgeneric add-local-function (environment function-name &optional identity))
 
 (defgeneric add-local-macro (environment symbol expander))
 
-(defgeneric add-block (environment symbol))
+(defgeneric add-block (environment symbol &optional identity))
 
-(defgeneric add-tag (environment symbol))
+(defgeneric add-tag (environment symbol &optional identity))
 
 (defgeneric add-variable-type (environment symbol type))
 

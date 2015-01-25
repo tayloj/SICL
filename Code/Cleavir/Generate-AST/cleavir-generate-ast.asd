@@ -1,6 +1,6 @@
-(cl:in-package #:common-lisp-user)
+(cl:in-package #:asdf-user)
 
-(asdf:defsystem :cleavir-generate-ast
+(defsystem :cleavir-generate-ast
   :depends-on (:cleavir-ast
 	       :cleavir-primop
 	       :cleavir-code-utilities
@@ -9,7 +9,12 @@
   :components
   ((:file "packages")
    (:file "conditions")
+   (:file "check-special-form-syntax")
+   (:file "environment-query")
+   (:file "utilities")
+   (:file "minimal-compilation")
    (:file "generate-ast")
    (:file "convert-form")
    (:file "convert-special")
-   (:file "convert-primop")))
+   (:file "convert-primop")
+   (:file "ast-from-file")))
